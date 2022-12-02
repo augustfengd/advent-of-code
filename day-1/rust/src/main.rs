@@ -49,6 +49,7 @@ fn parse_elf(r: &mut impl BufRead) -> Option<Inventory> {
 }
 
 fn main() {
+    // part 1
     match File::open("input") {
         Ok(f) => {
             let elves = Elves {
@@ -65,6 +66,24 @@ fn main() {
                     "something failed along the aggregation, and I'm kind of curious where."
                 ),
             }
+        }
+        Err(e) => eprintln!("{}", e),
+    };
+    // part 2
+    match File::open("input") {
+        Ok(f) => {
+            let elves = Elves {
+                reader: BufReader::new(f),
+            };
+
+            let mut sum = elves
+                .into_iter()
+                .map(|inventory| inventory.iter().sum::<i32>())
+                .collect::<Vec<i32>>();
+
+            sum.sort();
+            sum.reverse();
+            println!("{}", sum.iter().take(3).sum::<i32>());
         }
         Err(e) => eprintln!("{}", e),
     };
