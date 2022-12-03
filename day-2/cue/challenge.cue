@@ -11,8 +11,49 @@ import (
 #Draw: 3
 #Win:  6
 
-#Games: [...#Game]
-#Game: {
+#GameInput: {
+	input: {
+		part: 1 | 2
+		"1":  "A" | "B" | "C"
+		"2":  "X" | "Y" | "Z"
+	}
+
+	if input."1" == "A" {
+		a: #Rock
+	}
+	if input."1" == "B" {
+		a: #Paper
+	}
+	if input."1" == "C" {
+		a: #Scissor
+	}
+
+	if input.part == 1 {
+		if input."2" == "X" {
+			b: #Rock
+		}
+		if input."2" == "Y" {
+			b: #Paper
+		}
+		if input."2" == "Z" {
+			b: #Scissor
+		}
+	}
+
+	if input.part == 2 {
+		if input."2" == "X" {
+			score: x: #Lose
+		}
+		if input."2" == "Y" {
+			score: x: #Draw
+		}
+		if input."2" == "Z" {
+			score: x: #Win
+		}
+	}
+}
+
+#GameState: {
 	a: #Rock | #Paper | #Scissor
 	b: #Rock | #Paper | #Scissor
 	score: {
@@ -24,6 +65,12 @@ import (
 		}
 		total: x + y
 	}
+}
+
+#GameRules: {
+	a: _
+	b: _
+	score: x: _
 
 	if a == #Rock {
 		if score.x == #Lose {
@@ -87,52 +134,23 @@ import (
 	}
 }
 
-#ConsumeInput: {
-	_eat: {
-		_part: 1 | 2
-		_line: string
-		_col:  strings.Split(_line, " ")
-		_col: [
-			{"A" | "B" | "C"},
-			{"X" | "Y" | "Z"},
-		]
-
-		if _part == 1 {
-			let map = {
-				"A": #Rock
-				"X": #Rock
-				"B": #Paper
-				"Y": #Paper
-				"C": #Scissor
-				"Z": #Scissor
-			}
-			a: map[_col[0]]
-			b: map[_col[1]]
-		}
-		if _part == 2 {
-			let map = {
-				"A": #Rock
-				"X": #Lose
-				"B": #Paper
-				"Y": #Draw
-				"C": #Scissor
-				"Z": #Win
-			}
-			a: map[_col[0]]
-			score: x: map[_col[1]]
-		}
-
-		#Game
-	}
-	[ for line in strings.Split(input, "\n") if line != "" {_eat & {_line: line}}]
+#Games: [...#Game]
+#Game: {
+	#GameInput
+	#GameState
+	#GameRules
 }
 
 input: string
 
-games: #Games & #ConsumeInput
+games: #Games & [ for line in strings.Split(input, "\n") if line != "" {
+	let inputs = strings.Split(line, " ")
+	input: "1": inputs[0]
+	input: "2": inputs[1]
+}]
 
 output: [string]: int
 output: {
-	"1": list.Sum([ for game in games & [...{_part: 1}] {game.score.total}])
-	"2": list.Sum([ for game in games & [...{_part: 2}] {game.score.total}])
+	"1": list.Sum([ for game in games & [...{input: part: 1}] {game.score.total}])
+	"2": list.Sum([ for game in games & [...{input: part: 2}] {game.score.total}])
 }
