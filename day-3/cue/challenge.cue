@@ -1,42 +1,71 @@
 import (
 	"strings"
 	"list"
+	"strconv"
 )
 
 #Priority: {
 	{
-		for i, c in ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"] {
+		for i, c in strings.Split("abcdefghijklmnopqrstuvwxyz", "") {
 			(c): (i) + 1
 		}
 	}
 	{
-		for i, c in ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"] {
+		for i, c in strings.Split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "") {
 			(c): (i) + 27
 		}
 	}
 }
 
+#Rucksacks: [...#Rucksack]
 #Rucksack: {
-	a: [...string]
-	b: [...string]
+	ab: [...string]
+	a: list.Slice(ab, 0, div(len(ab), 2))
+	b: list.Slice(ab, div(len(ab), 2), len(ab))
 
-	c: {for c in a if list.Contains(b, c) {(c): _}}
-	priority: list.Sum([ for x, _ in c {#Priority[x]}])
+	c: {
+		all: [ for c in a if list.Contains(b, c) {c}]
+		unique: {
+			let characters = {for c in all {(c): _}}
+			[ for c, _ in characters {c}]
+		}
+	}
+	priority: list.Sum([ for c in c.unique {#Priority[c]}])
+}
+
+#RucksackGroups: [...#RucksackGroup]
+#RucksackGroup: {
+	a: #Rucksack
+	b: #Rucksack
+	c: #Rucksack
+
+	d: {
+		all: [ for d in a.ab if list.Contains(b.ab, d) if list.Contains(c.ab, d) {d}]
+		unique: {
+			let characters = {for c in all {(c): _}}
+			[ for c, _ in characters {c}]
+		}
+	}
+	priority: list.Sum([ for c in d.unique {#Priority[c]}])
 }
 
 input: string
 
-rucksacks: [...#Rucksack]
-rucksacks: [ for line in strings.Split(input, "\n") if line != "" {
-	a: {
-		let compartment = strings.SliceRunes(line, 0, div(len(line), 2))
-		strings.Split(compartment, "")
-	}
-	b: {
-		let compartment = strings.SliceRunes(line, div(len(line), 2), len(line))
-		strings.Split(compartment, "")
-	}
+rucksacks: #Rucksacks & [ for line in strings.Split(input, "\n") if line != "" {
+	ab: strings.Split(line, "")
 }]
 
-output: int
-output: list.Sum([ for rucksack in rucksacks {rucksack.priority}])
+rucksackGroups: #RucksackGroups & {
+	let groups = {
+		for i, rucksack in rucksacks {
+			(strconv.FormatInt(div(i, 3), 10)): (strconv.FormatInt(mod(i, 3), 10)): rucksack // NOTE: requires cue version greater than 0.4.3; there's a bug that causes early termination of the comprehension.
+		}
+	}
+	[ for group in groups {a: group."0", b: group."1", c: group."2"}]
+}
+
+output: [string]: int
+output: {
+	"1": list.Sum([ for rucksack in rucksacks {rucksack.priority}])
+	"2": list.Sum([ for rucksackGroup in rucksackGroups {rucksackGroup.priority}])
+}
