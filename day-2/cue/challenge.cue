@@ -3,67 +3,136 @@ import (
 	"strings"
 )
 
-#Rock:    "A" | "X"
-#Paper:   "B" | "Y"
-#Scissor: "C" | "Z"
+#Rock:    "Rock"
+#Paper:   "Paper"
+#Scissor: "Scissor"
 
-#Opponent: "A" | "B" | "C"
-#Player:   "X" | "Y" | "Z"
-
-#Win:  6
 #Lose: 0
 #Draw: 3
+#Win:  6
 
+#Games: [...#Game]
 #Game: {
-	a:     (#Rock | #Paper | #Scissor) & #Opponent
-	b:     (#Rock | #Paper | #Scissor) & #Player
-	score: int
+	a: #Rock | #Paper | #Scissor
+	b: #Rock | #Paper | #Scissor
+	score: {
+		x: #Win | #Lose | #Draw
+		y: (1 | 2 | 3) & {
+			if b == #Rock {1}
+			if b == #Paper {2}
+			if b == #Scissor {3}
+		}
+		total: x + y
+	}
 
-	if a == (#Opponent & #Rock) {
-		if b == (#Player & #Rock) {
-			score: #Draw + 1
+	if a == #Rock {
+		if score.x == #Lose {
+			b: #Scissor
 		}
-		if b == (#Player & #Paper) {
-			score: #Win + 2
+		if score.x == #Draw {
+			b: #Rock
 		}
-		if b == (#Player & #Scissor) {
-			score: #Lose + 3
+		if score.x == #Win {
+			b: #Paper
 		}
-	}
-	if a == (#Opponent & #Paper) {
-		if b == (#Player & #Rock) {
-			score: #Lose + 1
+		if b == #Rock {
+			score: x: #Draw
 		}
-		if b == (#Player & #Paper) {
-			score: #Draw + 2
+		if b == #Paper {
+			score: x: #Win
 		}
-		if b == (#Player & #Scissor) {
-			score: #Win + 3
+		if b == #Scissor {
+			score: x: #Lose
 		}
 	}
-	if a == (#Opponent & #Scissor) {
-		if b == (#Player & #Rock) {
-			score: #Win + 1
+	if a == #Paper {
+		if score.x == #Lose {
+			b: #Rock
 		}
-		if b == (#Player & #Paper) {
-			score: #Lose + 2
+		if score.x == #Draw {
+			b: #Paper
 		}
-		if b == (#Player & #Scissor) {
-			score: #Draw + 3
+		if score.x == #Win {
+			b: #Scissor
+		}
+		if b == #Rock {
+			score: x: #Lose
+		}
+		if b == #Paper {
+			score: x: #Draw
+		}
+		if b == #Scissor {
+			score: x: #Win
+		}
+	}
+	if a == #Scissor {
+		if score.x == #Lose {
+			b: #Paper
+		}
+		if score.x == #Draw {
+			b: #Scissor
+		}
+		if score.x == #Win {
+			b: #Rock
+		}
+		if b == #Rock {
+			score: x: #Win
+		}
+		if b == #Paper {
+			score: x: #Lose
+		}
+		if b == #Scissor {
+			score: x: #Draw
 		}
 	}
 }
 
+#ConsumeInput: {
+	_eat: {
+		_part: 1 | 2
+		_line: string
+		_col:  strings.Split(_line, " ")
+		_col: [
+			{"A" | "B" | "C"},
+			{"X" | "Y" | "Z"},
+		]
+
+		if _part == 1 {
+			let map = {
+				"A": #Rock
+				"X": #Rock
+				"B": #Paper
+				"Y": #Paper
+				"C": #Scissor
+				"Z": #Scissor
+			}
+			a: map[_col[0]]
+			b: map[_col[1]]
+		}
+		if _part == 2 {
+			let map = {
+				"A": #Rock
+				"X": #Lose
+				"B": #Paper
+				"Y": #Draw
+				"C": #Scissor
+				"Z": #Win
+			}
+			a: map[_col[0]]
+			score: x: map[_col[1]]
+		}
+
+		#Game
+	}
+	[ for line in strings.Split(input, "\n") if line != "" {_eat & {_line: line}}]
+}
+
 input: string
 
-games: [...#Game]
-games: [ for line in strings.Split(input, "\n") if line != "" {
-	let moves = strings.Split(line, " ")
-	a: _|_ | *moves[0]
-	b: _|_ | *moves[1]
-}]
+games: #Games & #ConsumeInput
 
 output: [string]: int
 output: {
-	"1": list.Sum([ for game in games {game.score}])
+	"1": list.Sum([ for game in games & [...{_part: 1}] {game.score.total}])
+	"2": list.Sum([ for game in games & [...{_part: 2}] {game.score.total}])
 }
