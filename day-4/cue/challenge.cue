@@ -34,6 +34,15 @@ import (
 			true
 		}
 	}
+	d: bool | *false
+	d: {
+		if len(c._a) > 0 {
+			true
+		}
+		if len(c._b) > 0 {
+			true
+		}
+	}
 }
 
 #Sections: [...#Section]
@@ -51,12 +60,17 @@ input: string | *"""
 	2-6,4-8
 	"""
 
-sections: #Sections & [ for line in strings.Split(input, "\n") {
+#ConsumeText: [ for line in strings.Split(input, "\n") {
 	let _ab = strings.Split(line, ",")
 	_a: _ab[0]
 	_b: _ab[1]
+	...
 }]
 
+sections: #Sections & #ConsumeText
+
+output: [string]: int
 output: {
 	"1": len([ for section in sections if section.c {_}])
+	"2": len([ for section in sections if section.d {_}])
 }
