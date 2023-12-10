@@ -1,52 +1,95 @@
 ﻿let lines = System.IO.File.ReadAllLines "input"
 
-// get all numbers
-// for each number, travel around and see if there's an adjacent symbol.
-// if there is, sum.
+module Domain =
+    type Positions =
+        { Rows: int list
+          Columns: int list }
 
-type Part = {
-    Number: int
-    Positions: int list
-    Neighbors: int list
-}
+    type Token =
+        { Char: char
+          Row: int
+          Column: int }
 
-module Parse =
+    type Part =
+        { Value: int
+          Row: int
+          Column: int list }
+
+    type Symbol =
+        { Value: char
+          Row : int
+          Column : int }
+
+    type Thing = | Part of Part
+                 | Symbol of Symbol
+
+module Parser =
+    open Domain
+
+    let or' a b c = (a c) || (b c)
+
     let isDigit = System.Char.IsDigit
-    let isPeriod = (=) '.'
-    let isSymbol = (fun c -> isDigit c && isPeriod c) >> not 
 
-    let width = List.head >> String.length
+    let isSymbol = or' System.Char.IsDigit ((=) '.') >> not
 
-    let parts text =
-        let findPartNumber x xs = "123"
-        let inner acc position rest =
-            match rest with
-            | x :: xs when isDigit x ->
-                let s = findPartNumber x xs |> int
-                let positions = List.init (String.length number) (fun i -> position + i)
-                let neighbors =
-                    let left = 0
-                    let right = 0
-                    let topleft = 0
-                    let topright = 0
-                    let botttomleft = 0
-                    let bottomright = 0
-                    let top = [1,2,3]
-                    let bottom = [1,2,3]
-                    List.append left bottom
-                { Number = s
-                  Positions = positions
-                  Neighbors = neighbors }
-            | _ ->
+    let parse n (s : string) =
+        let tokens = Seq.mapi (fun m c -> { Char = c
+                                            Row = n
+                                            Column = m }) s |> Seq.filter (_.Char >> or' isDigit isSymbol)
 
-    let foobar lines =
-        { Number = 1
-          Row = 1
-          Column = [1 ; 2 ; 3] }
+        let groups = Seq.fold (fun (groups : Token list list) (token : Token) -> match groups with
+                                                                                 | x :: xs
+                                                                                      when (=) token.Column (List.head x |> (_.Column) |> (+) 1) &&
+                                                                                           isDigit (List.head x |> (_.Char)) &&
+                                                                                           isDigit token.Char ->
+                                                                                               (token :: x) :: xs
+                                                                                 | groups ->
+                                                                                     List.singleton token :: groups ) [] tokens |> (List.map List.rev >> List.rev)
 
-    let run = 0
+        let things = Seq.fold (fun (things : Thing list) (group : Token list) -> match group with
+                                                                                 | { Char = c ; Row = n ; Column = _} :: _
+                                                                                     when isDigit c ->
+                                                                                         Part { Value = List.fold (fun s token -> $"{s}{token.Char}") "" group |> int
+                                                                                                Row = n
+                                                                                                Column = List.map (fun (token : Token) -> token.Column) group } :: things
+                                                                                 | { Char = c ; Row = n ; Column = m} :: []
+                                                                                     when isSymbol c ->
+                                                                                         Symbol { Value = c
+                                                                                                  Row = n
+                                                                                                  Column = m } :: things
+                                                                                 | fml -> failwith "I give up on safety; it won't reach here anyways. Hit me up when it does.") [] groups
+        things |> List.rev
+
+
+module Neighbors =
+    open Domain
+
+    let buildPossibleNeighborsPositions (part : Part) =
+        let it = { Rows = [ part.Row - 1 ; part.Row ; part.Row + 1 ]
+                   Columns = (part.Column |> List.min |> (-) <| 1) :: (part.Column |> List.max |> (+) 1) :: part.Column }
+        it
+
+    let findNeighboringSymbols (symbols : Symbol list) positions =
+        List.filter (fun (symbol : Symbol) -> List.contains symbol.Row positions.Rows && List.contains symbol.Column positions.Columns) symbols
+
+    let partHasSymbolNeighbor (symbols: Symbol list) (part : Part) =
+        buildPossibleNeighborsPositions part |> findNeighboringSymbols symbols |> (List.isEmpty >> not)
+
+module One =
+    let run lines =
+        let parts, symbols = Seq.mapi Parser.parse lines
+                             |> List.concat
+                             |> List.partition (function Domain.Thing.Part _ -> true | Domain.Thing.Symbol _ -> false)
+                             |> fun (parts, symbols) -> List.map (fun (Domain.Thing.Part part) -> part) parts, List.map (fun (Domain.Thing.Symbol symbol) -> symbol) symbols // is there a better way to do this? compiler is giving warnings.
+        let values = List.filter (Neighbors.partHasSymbolNeighbor symbols) parts |> List.map (_.Value)
+        List.sum values
+
+module Two =
+    let run lines =
+        0
 
 [<EntryPoint>]
 let main _ =
-    Parse.r "467..114.." |> printfn "%A"
+    One.run lines |> printfn "%A"
+    Two.run lines |> printfn "%A"
     0
