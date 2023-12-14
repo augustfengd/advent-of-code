@@ -26,6 +26,8 @@ module Domain =
 module Parser =
     open Domain
 
+    type TokenGroup = Token list
+
     let or' a b c = (a c) || (b c)
 
     let isDigit = System.Char.IsDigit
@@ -37,12 +39,13 @@ module Parser =
                                             Row = n
                                             Column = m }) s |> Seq.filter (_.Char >> or' isDigit isSymbol)
 
-        let groups = Seq.fold (fun (groups : Token list list) (token : Token) -> match groups with
+        let tokenPrecedesToken (a : Token) (b : Token) =  a.Column + 1 = b.Column
+
+        let digitAndDigit (a : Token) (b: Token) = isDigit a.Char && isDigit b.Char
+
+        let groups = Seq.fold (fun (groups : TokenGroup list) (token : Token) -> match groups with
                                                                                  | x :: xs
-                                                                                      when (=) token.Column (List.head x |> (_.Column) |> (+) 1) &&
-                                                                                           isDigit (List.head x |> (_.Char)) &&
-                                                                                           isDigit token.Char ->
-                                                                                               (token :: x) :: xs
+                                                                                      when tokenPrecedesToken token (List.head x) && digitAndDigit token (List.head x) -> (token :: x) :: xs
                                                                                  | groups ->
                                                                                      List.singleton token :: groups ) [] tokens |> (List.map List.rev >> List.rev)
 
@@ -64,9 +67,13 @@ module Parser =
 module Adjacent =
     open Domain
 
+    let SetMin (compare : 'a -> 'a -> 'a) set  =
+        0
+
     let buildAdjacentPositionsForPart (part : Part) =
         let it = { Rows = [ part.Row - 1 ; part.Row ; part.Row + 1 ]
-                   Columns = (part.Columns |> List.min |> (-) <| 1) :: (part.Columns |> List.max |> (+) 1) :: part.Columns }
+                   Columns = (part.Columns |> List.min |> (-) <| 1) :: (part.Columns |> List.max |> (+) 1) :: part.Columns
+               }
         it
 
     let findAdjacentSymbols (symbols : Symbol list) positions =
@@ -102,7 +109,10 @@ module Two =
                              |> List.concat
                              |> List.partition (function Domain.Thing.Part _ -> true | Domain.Thing.Symbol _ -> false)
                              |> fun (parts, symbols) -> List.map (fun (Domain.Thing.Part part) -> part) parts, List.map (fun (Domain.Thing.Symbol symbol) -> symbol) symbols // is there a better way to do this? compiler is giving warnings.
-        List.filter (Adjacent.symbolHasAdjacentParts parts 2) symbols |> List.sumBy (_.Value)
+        List.fold (fun sum symbol ->
+                       let adjacents = Adjacent.buildAdjacentPositionsForSymbol symbol |> Adjacent.findAdjacentParts parts |> fun it -> if List.length it > 1 then it else []
+                       sum + (List.map (fun (part : Domain.Part) -> part.Value) adjacents |> function | x::xs -> List.fold (fun a b -> a * b) 1 (x::xs) | [] -> 0)
+                       ) 0 symbols
 
 [<EntryPoint>]
 let main _ =
