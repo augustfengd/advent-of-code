@@ -30,6 +30,7 @@ module Lib =
     let incrementOccurrences acc k = match Map.tryFind k acc with
                                                             | Some v -> Map.add k (v + 1) acc
                                                             | None -> Map.add k 1 acc
+
     let buildOccurrences locations = List.fold incrementOccurrences Map.empty locations
     
     let calculateSimilarityScore map k =
