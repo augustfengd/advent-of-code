@@ -6,9 +6,16 @@
     <RootNamespace>day._01</RootNamespace>
   </PropertyGroup>
 
+<ItemGroup>
+  <Content Include="input.txt">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  </ItemGroup>
+  
+  
+
   <ItemGroup>
     <Compile Include="Program.fs" />
-    <Content Include="input.txt" />
   </ItemGroup>
 
 </Project>
