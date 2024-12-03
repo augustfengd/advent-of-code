@@ -24,7 +24,7 @@ module Lib =
              >> fun pair -> pair.[0], pair.[1]
 
     // part 2
-    let compareAndAdd sum left right=
+    let compareAndAdd sum left right =
         if left > right then
             sum + (left - right)
         else
@@ -34,7 +34,7 @@ module Lib =
                                                             | Some v -> Map.add k (v + 1) acc
                                                             | None -> Map.add k 1 acc
 
-    let buildOccurrences locations = List.fold incrementOccurrences Map.empty locations
+    let buildOccurrences = List.fold incrementOccurrences Map.empty
     
     let calculateSimilarityScore map k =
         match Map.tryFind k map with
