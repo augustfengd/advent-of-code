@@ -7,21 +7,20 @@ module Lib =
 
     let toLines = String.split '\n'
 
-    let toTuple =
-        String.split ' '
-        >> Array.filter (System.String.IsNullOrEmpty >> not)
-        >> fun pair -> (pair.[0] , pair.[1])
+    let toTuple = String.split ' '
+                                     >> Array.filter (System.String.IsNullOrEmpty >> not)
+                                     >> fun pair -> (pair.[0] , pair.[1])
         
 
     let tuple2ToList (left,right) = [ left ; right ]
 
     let parse = toLines
-             >> Array.map toTuple
-             >> Array.unzip
-             >> tuple2ToList
-             >> List.map (Array.map System.Int32.Parse >> Array.toList)
-             >> List.map (List.sort)
-             >> fun pair -> pair.[0], pair.[1]
+                                    >> Array.map toTuple
+                                    >> Array.unzip
+                                    >> tuple2ToList
+                                    >> List.map (Array.map System.Int32.Parse >> Array.toList)
+                                    >> List.map (List.sort)
+                                    >> fun pair -> pair.[0], pair.[1]
 
     // part 2
     let compareAndAdd sum left right =
