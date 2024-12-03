@@ -4,7 +4,9 @@
 module Lib =
     // part 1
     let getInput () = System.IO.File.ReadAllText "input.txt"
+
     let toLines = String.split '\n'
+
     let toTuple =
         String.split ' '
         >> Array.filter (System.String.IsNullOrEmpty >> not)
@@ -12,6 +14,7 @@ module Lib =
         
 
     let tuple2ToList (left,right) = [ left ; right ]
+
     let parse = toLines
              >> Array.map toTuple
              >> Array.unzip
