@@ -104,7 +104,7 @@ module Lib =
 module App =
     open Lib
     let part1 () =
-        Lib.run ()
+        run ()
 
 [<EntryPoint>]
 let main _ =
