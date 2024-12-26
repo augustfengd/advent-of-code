@@ -1,6 +1,10 @@
 ﻿module String =
     let split (c : char) (s : string) = s.Split(c) 
 
+let curry f = fun x y -> f(x,y)
+
+let flip f = fun x y -> f y x
+
 type State<'s, 'v> = State of ('s -> 's * 'v)
 
 module State =
@@ -9,7 +13,6 @@ module State =
     let bind m f = State (fun s -> let s', v = run m s in run (f v) s')
     let get = State (fun s -> s, s)
     let put s = State (fun _ -> s, ())
-    let zero = State (fun s -> s, ())
 
 type StateBuilder () =
     member _.Bind(m,f) = State.bind m f
@@ -19,16 +22,17 @@ type StateBuilder () =
 let state = StateBuilder()
 
 module List =
-    let traverseStateM f t =
-        let (>>=) = State.bind
-        let return_ = State.return_
+    module State =
+        let traverseM f t =
+            let (>>=) = State.bind
+            let return_ = State.return_
         
-        let init = return_ []
-        let folder head tail =
-            f head >>= (fun x ->
-            tail   >>= (fun xs -> return_ (x :: xs)))
+            let init = return_ []
+            let folder head tail =
+                f head >>= (fun x ->
+                tail   >>= (fun xs -> return_ (x :: xs)))
         
-        List.foldBack folder t init
+            List.foldBack folder t init
 
 module Lib =
     type Direction =
@@ -45,22 +49,19 @@ module Lib =
         Level: int option
     }
 
-    let IsIncreasing a b =
-        match a - b with
+    let IsIncreasing = function
         | diff when diff > 0 -> Some Decreasing
         | diff when diff < 0 -> Some Increasing
         | _ -> None
     
-    let computeDirectionAndDistance a b =
-        match a, b with
+    let computeDirectionAndDistance = function
         | _, None -> None, None
-        | a, Some b -> IsIncreasing a b, Some (System.Math.Abs(a - b))
+        | a, Some b -> IsIncreasing (a - b), Some (System.Math.Abs(a - b))
 
-    let checkDistanceSafeness distance =
-        match distance with
+    let checkDistanceSafeness = function
         | Some n -> if n >= 1 && n <= 3 then Safe else Unsafe
         | None -> Safe
-    
+
     let checkDirectionSafeness  = function
         | Some Increasing, Some Increasing -> Safe
         | Some Decreasing, Some Decreasing -> Safe
@@ -69,7 +70,7 @@ module Lib =
 
     let check n = state {
         let! progress = State.get
-        let direction, distance = computeDirectionAndDistance n progress.Level
+        let direction, distance = curry computeDirectionAndDistance n progress.Level
 
         let directionSafeness = checkDirectionSafeness (progress.Direction, direction)
         let distanceSafeness = checkDistanceSafeness distance
@@ -83,7 +84,7 @@ module Lib =
 
     let checkReport levels =
        let init = { Safeness = Safe ; Direction = None ; Level = None }
-       let _, operations = State.run (List.traverseStateM check levels) init
+       let _, operations = State.run (List.State.traverseM check levels) init
        foldSafeness operations
 
     let getInput ()  = System.IO.File.ReadAllText "input.txt"
@@ -103,8 +104,7 @@ module Lib =
 
 module App =
     open Lib
-    let part1 () =
-        run ()
+    let part1 = run
 
 [<EntryPoint>]
 let main _ =
