@@ -51,7 +51,7 @@ module Lib =
         | diff when diff < 0 -> Some Increasing
         | _ -> None
     
-    let computeDirectionAndDistance a (b : int option) =
+    let computeDirectionAndDistance a b=
         match a, b with
         | _, None -> None, None
         | a, Some b -> IsIncreasing a b, Some (System.Math.Abs(a - b))
