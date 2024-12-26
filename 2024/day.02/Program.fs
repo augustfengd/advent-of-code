@@ -5,22 +5,12 @@ type State<'s, 'v> = State of ('s -> 's * 'v)
 
 module State =
     let run (State f) state = f state
-    
     let return_ v = State (fun s -> s, v)
-
     let bind m f = State (fun s -> let s', v = run m s in run (f v) s')
-    
     let get = State (fun s -> s, s)
-    
     let put s = State (fun _ -> s,())
-
     let zero = State (fun s -> s, ())
 
-    let apply mf mx=
-        State (fun s ->
-            let s', f = run mf s
-            let s'', v = run mx s'
-            s'', f v)
 type StateBuilder () =
     member _.Bind(m,f) = State.bind m f
     member _.Return(v) = State.return_ v
