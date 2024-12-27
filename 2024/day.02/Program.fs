@@ -3,8 +3,6 @@
 
 let curry f = fun x y -> f(x,y)
 
-let flip f = fun x y -> f y x
-
 type State<'s, 'v> = State of ('s -> 's * 'v)
 
 module State =
