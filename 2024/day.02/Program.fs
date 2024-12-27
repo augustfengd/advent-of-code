@@ -84,8 +84,8 @@ module Lib =
 
     let checkReport levels =
        let init = { Safeness = Safe ; Direction = None ; Level = None }
-       let _, operations = State.run (List.State.traverseM check levels) init
-       foldSafeness operations
+       let checker = List.State.traverseM check levels
+       State.run checker init |> snd |> foldSafeness
 
     let getInput ()  = System.IO.File.ReadAllText "input.txt"
 
@@ -100,7 +100,8 @@ module Lib =
         getInput
         >> parse
         >> Array.map (Array.toList >> checkReport)
-        >> Array.sumBy (function | Safe -> 1 | Unsafe -> 0)
+        >> Array.filter (function | Safe -> true | Unsafe -> false)
+        >> Array.length
 
 module App =
     open Lib
