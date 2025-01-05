@@ -81,13 +81,13 @@ module Lib =
     let parseMul = parse "mul"
     let parse = parse "mul" >>. parse "(" >>. Parse.number .>> parse "," .>>. Parse.number .>> parse ")"
 
-    let run s = run parse s  
+    let run = run parse  
 
 open Lib
 
 [<EntryPoint>]
 let main _ =
     match run "mul(1,3)" with
-    | Ok v -> printfn $"{v}"
+    | Ok (parsed, _) -> printfn $"{parsed}"
     | Error e -> printfn $"{e}"
     0
