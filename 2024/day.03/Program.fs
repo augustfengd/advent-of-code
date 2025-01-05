@@ -69,17 +69,24 @@ module Parser =
     let between a b c =
         a >>. b .>> c
 
+    let parse : string -> Parser<string> = Seq.toList >> traverseM (fun c -> satisfy ((=) c)) >> map (Seq.toArray >> System.String)
+
+
     module Parse =
         let char = satisfy System.Char.IsAscii
-        let digit = satisfy System.Char.IsDigit
-        let number = many1 digit
-        let string_ : string -> Parser<string> = Seq.toList >> traverseM (fun c -> satisfy ((=) c)) >> map (Seq.toArray >> System.String)
+        let digit = satisfy System.Char.IsDigit |> map (string >> int)
+        let number = many1 digit |> map (List.reduce (fun a b -> a * 10 + b))
+module Lib =
+    open Parser
+    let parseMul = parse "mul"
+    let parse = parse "mul" >>. parse "(" >>. Parse.number .>> parse "," .>>. Parse.number .>> parse ")"
 
-open Parser
+    let run s = run parse s  
+open Lib
 
 [<EntryPoint>]
 let main _ =
-    match run Parse.char "asdf" with
+    match run "mul(1,3)" with
     | Ok v -> printfn $"{v}"
     | Error e -> printfn $"{e}"
     0
