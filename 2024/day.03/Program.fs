@@ -1,6 +1,6 @@
 ﻿let tuple2 x y = x,y
 
-let tuple2mapItem1 f (x,y) = f x, y 
+let tuple2mapItem1 f = fun (x,y) -> f x,y
 
 let uncurry f = fun (x,y) -> f x y 
 
@@ -35,6 +35,12 @@ module Parser =
     
     let (>>.) a b = a .>>. b |>  map snd
 
+    let traverseM f t =
+        let folder a b =
+            f a >>= (fun x ->
+            b   >>= (fun xs -> return_ (x :: xs)))
+        List.foldBack folder t (return_ [])
+    
     let orElse a b =
         let fn s = match run a s with
                    | Ok v -> Ok v
@@ -61,12 +67,13 @@ module Parser =
         many parser >>= (fun xs -> return_ (x :: xs)))
 
     let between a b c =
-        a >>. b .>> b 
+        a >>. b .>> c
 
     module Parse =
         let char = satisfy System.Char.IsAscii
         let digit = satisfy System.Char.IsDigit
         let number = many1 digit
+        let string_ s = 0
 
 open Parser
 
