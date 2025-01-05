@@ -1,4 +1,4 @@
-﻿let tuple2 x y = x,y
+﻿let tuple2 = fun x y -> x,y
 
 let tuple2mapItem1 f = fun (x,y) -> f x,y
 
@@ -69,25 +69,38 @@ module Parser =
     let between a b c =
         a >>. b .>> c
 
+    let opt c = satisfy ((=) c) |> map Some <|> return_ None
+
+    let parseDigit = satisfy System.Char.IsDigit |> map (string >> int)
+
+    let parseNumber = many1 parseDigit |> map (List.reduce (fun a b -> a * 10 + b))
+
     let parse : string -> Parser<string> = Seq.toList >> traverseM (fun c -> satisfy ((=) c)) >> map (Seq.toArray >> System.String)
 
+open Parser
 
-    module Parse =
-        let char = satisfy System.Char.IsAscii
-        let digit = satisfy System.Char.IsDigit |> map (string >> int)
-        let number = many1 digit |> map (List.reduce (fun a b -> a * 10 + b))
 module Lib =
     open Parser
-    let parseMul = parse "mul"
-    let parse = parse "mul" >>. parse "(" >>. Parse.number .>> parse "," .>>. Parse.number .>> parse ")"
+    
+    let parseCharExceptM = satisfy ((<>) 'm')
+    let parseMul = parse "mul" >>. parse "(" >>. parseNumber .>> parse "," .>>. parseNumber .>> parse ")"
+    let parse = many (many parseCharExceptM >>. parseMul)
+    let read () = System.IO.File.ReadAllText "input.txt"
 
-    let run = run parse  
-
+    let run () =
+        let text = read ()
+        let parsed = run parse text
+        let data = Result.map snd parsed
+        Ok (data)
+        // >> Result.map (fst >> (List.map (uncurry (*)) >> List.sum))
+    
+    // let run = read >> run parse >> Result.map (fst >> (List.map (uncurry (*)) >> List.sum))
+    
 open Lib
 
 [<EntryPoint>]
 let main _ =
-    match run "mul(1,3)" with
-    | Ok (parsed, _) -> printfn $"{parsed}"
+    match run () with
+    | Ok v -> printfn $"%A{v}"
     | Error e -> printfn $"{e}"
     0
