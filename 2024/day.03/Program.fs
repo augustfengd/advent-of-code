@@ -82,6 +82,7 @@ module Lib =
     let parse = parse "mul" >>. parse "(" >>. Parse.number .>> parse "," .>>. Parse.number .>> parse ")"
 
     let run s = run parse s  
+
 open Lib
 
 [<EntryPoint>]
