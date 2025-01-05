@@ -73,7 +73,7 @@ module Parser =
         let char = satisfy System.Char.IsAscii
         let digit = satisfy System.Char.IsDigit
         let number = many1 digit
-        let string_ s = 0
+        let string_ : string -> Parser<string> = Seq.toList >> traverseM (fun c -> satisfy ((=) c)) >> map (Seq.toArray >> System.String)
 
 open Parser
 
