@@ -79,17 +79,16 @@ module Parser =
 
     let parse : string -> Parser<string> = Seq.toList >> traverseM (fun c -> satisfy ((=) c)) >> map (Seq.toArray >> System.String)
 
-open Parser
-
 module Lib =
     open Parser
-    
-    let parseCharExceptM = satisfy ((<>) 'm')
+
+    let parseManyCharExceptM = many (satisfy ((<>) 'm'))
     
     let parseCharM = satisfy ((=) 'm')
-    let parseMul = parse "mul" >>. parse "(" >>. parseNumber .>> parse "," .>>. parseNumber .>> parse ")"
-    let parse = many (many parseCharExceptM >>. parseMul <|> (many parseCharExceptM >>. parseCharM >>. return_ (0,0)))
 
+    let parseMul = parse "mul" >>. parse "(" >>. parseNumber .>> parse "," .>>. parseNumber .>> parse ")"
+
+    let parse = many (parseManyCharExceptM >>. parseMul <|> (parseManyCharExceptM >>. parseCharM >>. return_ (0,0)))
                       
     let read () = System.IO.File.ReadAllText "input.txt"
 
