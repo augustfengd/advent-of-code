@@ -55,11 +55,13 @@ module Parser =
                  | s when predicate s.[0] -> Ok (s.[0], s.[1..])
                  | s -> Error $"Unexpected '{s.[0]}'"
         Parser fn
-    
+
     let many parser =
         let rec parseZeroOrMore parser s = match run parser s with
                                            | Ok (parsed, remaining) -> parseZeroOrMore parser remaining |> tuple2mapItem1 (cons parsed)
-                                           | Error _ -> [],s
+                                           | Error e ->
+                                               printfn $"{e}"
+                                               [],s
         Parser (parseZeroOrMore parser >> Ok)
 
     let many1 parser =
@@ -83,24 +85,26 @@ module Lib =
     open Parser
     
     let parseCharExceptM = satisfy ((<>) 'm')
+    
+    let parseCharM = satisfy ((=) 'm')
     let parseMul = parse "mul" >>. parse "(" >>. parseNumber .>> parse "," .>>. parseNumber .>> parse ")"
-    let parse = many (many parseCharExceptM >>. parseMul)
+    let parse = many (many parseCharExceptM >>. parseMul <|> (many parseCharExceptM >>. parseCharM >>. return_ (0,0)))
+
+                      
     let read () = System.IO.File.ReadAllText "input.txt"
 
-    let run () =
-        let text = read ()
-        let parsed = run parse text
-        let data = Result.map snd parsed
-        Ok (data)
-        // >> Result.map (fst >> (List.map (uncurry (*)) >> List.sum))
-    
-    // let run = read >> run parse >> Result.map (fst >> (List.map (uncurry (*)) >> List.sum))
-    
+    let run =
+        read
+        >> run parse
+        >> Result.map fst
+        >> Result.map (List.map (uncurry (*)))
+        >> Result.map List.sum
+
 open Lib
 
 [<EntryPoint>]
 let main _ =
     match run () with
-    | Ok v -> printfn $"%A{v}"
-    | Error e -> printfn $"{e}"
+    | Ok v -> printfn $"{v}"
+    | Error e -> eprintfn $"{e}"
     0
