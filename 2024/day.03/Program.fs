@@ -68,8 +68,7 @@ module Parser =
         parser      >>= (fun x ->
         many parser >>= (fun xs -> return_ (x :: xs)))
 
-    let between a b c =
-        a >>. b .>> c
+    let between a b c = a >>. b .>> c
 
     let opt c = satisfy ((=) c) |> map Some <|> return_ None
 
